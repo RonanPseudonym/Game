@@ -26,6 +26,182 @@
 #include <STB/stb_image.h>
 
 namespace Minerva {
+	namespace Net {
+		uint64_t DumpFloat(long double f, unsigned bits, unsigned expbits);
+		long double LoadFloat(uint64_t i, unsigned bits, unsigned expbits);
+
+		class Value {
+		public:
+			virtual void Load(unsigned char* stream, unsigned int* index) {};
+			virtual void Dump(unsigned char* stream, unsigned int* index) {};
+			virtual unsigned int Size() { return 0; };
+			virtual std::string ToString() { return ""; };
+		};
+
+		class Int2 : public Value {
+		public:
+			Int2();
+			Int2(int16_t n);
+			void Load(unsigned char* data_stream, unsigned int* index);
+			void Dump(unsigned char* data_stream, unsigned int* index);
+			void DumpRaw(unsigned char* data_stream, unsigned int* index);
+			unsigned int Size();
+			std::string ToString();
+			int16_t internal;
+		};
+
+		class IntU2 : public Value {
+		public:
+			IntU2();
+			IntU2(uint16_t n);
+			void Load(unsigned char* data_stream, unsigned int* index);
+			void Dump(unsigned char* data_stream, unsigned int* index);
+			void DumpRaw(unsigned char* data_stream, unsigned int* index);
+			unsigned int Size();
+			std::string ToString();
+			uint16_t internal;
+		};
+
+		class Int4 : public Value {
+		public:
+			Int4();
+			Int4(int32_t n);
+			void Load(unsigned char* data_stream, unsigned int* index);
+			void Dump(unsigned char* data_stream, unsigned int* index);
+			void DumpRaw(unsigned char* data_stream, unsigned int* index);
+			unsigned int Size();
+			std::string ToString();
+			int32_t internal;
+		};
+
+		class IntU4 : public Value {
+		public:
+			IntU4();
+			IntU4(uint32_t n);
+			void Load(unsigned char* data_stream, unsigned int* index);
+			void Dump(unsigned char* data_stream, unsigned int* index);
+			void DumpRaw(unsigned char* data_stream, unsigned int* index);
+			unsigned int Size();
+			std::string ToString();
+			uint32_t internal;
+		};
+
+		class Int8 : public Value {
+		public:
+			Int8();
+			Int8(int64_t n);
+			void Load(unsigned char* data_stream, unsigned int* index);
+			void Dump(unsigned char* data_stream, unsigned int* index);
+			void DumpRaw(unsigned char* data_stream, unsigned int* index);
+			unsigned int Size();
+			std::string ToString();
+			int64_t internal;
+		};
+
+		class IntU8 : public Value {
+		public:
+			IntU8();
+			IntU8(uint64_t n);
+			void Load(unsigned char* data_stream, unsigned int* index);
+			void Dump(unsigned char* data_stream, unsigned int* index);
+			void DumpRaw(unsigned char* data_stream, unsigned int* index);
+			unsigned int Size();
+			std::string ToString();
+			uint64_t internal;
+		};		
+		
+		class Float : public Value {
+		public:
+			Float();
+			Float(float n);
+			void Load(unsigned char* data_stream, unsigned int* index);
+			void Dump(unsigned char* data_stream, unsigned int* index);
+			void DumpRaw(unsigned char* data_stream, unsigned int* index);
+			unsigned int Size();
+			std::string ToString();
+			float internal;
+		};
+
+		class Double : public Value {
+		public:
+			Double();
+			Double(double n);
+			void Load(unsigned char* data_stream, unsigned int* index);
+			void Dump(unsigned char* data_stream, unsigned int* index);
+			void DumpRaw(unsigned char* data_stream, unsigned int* index);
+			unsigned int Size();
+			std::string ToString();
+			double internal;
+		};
+
+		class String : public Value {
+		public:
+			String();
+			String(char* str);
+			String(unsigned int size);
+			void Load(unsigned char* data_stream, unsigned int* index);
+			void Dump(unsigned char* data_stream, unsigned int* index);
+			void DumpRaw(unsigned char* data_stream, unsigned int* index);
+			unsigned int Size();
+			std::string ToString();
+			
+			IntU2 size;
+			char* internal;
+		};
+
+		Value* LoadValueType(unsigned char* data_stream, unsigned int* index);
+
+		class Any {
+		public:
+			Value* internal;
+			
+			Any();
+			Any(Value* internal);
+
+			void Load(unsigned char* data_stream, unsigned int* index);
+			void Dump(unsigned char* data_stream, unsigned int* index);
+			unsigned int Size();
+			unsigned int NetSize();
+			std::string ToString();
+		};
+
+		class ComponentValue : public Value {
+		public:
+			IntU4 id;
+			String key;
+			Any value;
+
+			ComponentValue();
+			ComponentValue(IntU4 id, String key, Any value);
+
+			void Load(unsigned char* data_stream, unsigned int* index);
+			void Dump(unsigned char* data_stream, unsigned int* index);
+			void DumpRaw(unsigned char* data_stream, unsigned int* index);
+			unsigned int Size();
+			std::string ToString();
+		};
+
+		enum PacketType {
+			TEST
+		};
+
+		class Packet {
+		private:
+			PacketType type;
+			std::vector<Any> data;
+		public:
+			Packet();
+			Packet(PacketType type);
+			Packet(PacketType type, std::vector<Any> data);
+
+			void operator+=(Any value);
+			unsigned int Size();
+			unsigned char* Dump();
+			void Load(unsigned char* in);
+			std::string ToString();
+		};
+	};
+
 	namespace Debug {
 		namespace Console {
 			void Log(const char* text);

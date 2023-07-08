@@ -57,6 +57,9 @@
     <ClCompile Include="minerva\system\controller\noclip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="minerva\net\types.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="juno-engine\include.h">

@@ -28,6 +28,7 @@
     <ClCompile Include="minerva\modeling\file_model.cpp" />
     <ClCompile Include="minerva\modeling\model_base.cpp" />
     <ClCompile Include="minerva\modeling\texture.cpp" />
+    <ClCompile Include="minerva\net\types.cpp" />
     <ClCompile Include="minerva\shading\program.cpp" />
     <ClCompile Include="minerva\shading\shader.cpp" />
     <ClCompile Include="minerva\system\controller\noclip.cpp" />
