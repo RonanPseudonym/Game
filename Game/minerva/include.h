@@ -417,53 +417,6 @@ namespace Minerva {
 		}
 	};
 
-	namespace Console {
-		enum TokenType {
-			TOKEN_IDENTIFIER,
-			TOKEN_ID,
-			TOKEN_DOMAIN
-		};
-
-		struct Token {
-			TokenType type;
-
-			Token(TokenType _type) {
-				type = _type;
-			}
-		};
-
-		struct TokenString : public Token {
-			TokenType type;
-			std::string value;
-
-			TokenString(TokenType _type) : Token(_type) {
-
-			}
-		};
-
-		struct TokenID : public Token {
-			TokenType    type;
-			unsigned int value;
-
-			TokenID(TokenType _type) : Token(_type) {
-
-			}
-		};
-
-		class Command {
-		public:
-			Command(const char* src, Minerva::Engine* engine);
-		private:
-			const char* src;
-			
-			std::vector<Token*> tokens;
-
-			void Lex();
-			bool IsAlpha();
-			bool IsAlphaNum();
-		};
-	}
-
 	class Engine {
 	public:
 		double delta_time = 0;

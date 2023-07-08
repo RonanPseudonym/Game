@@ -21,7 +21,6 @@
   <ItemGroup>
     <ClCompile Include="libs\exec\glad.c" />
     <ClCompile Include="minerva\component.cpp" />
-    <ClCompile Include="minerva\console\command.cpp" />
     <ClCompile Include="minerva\debug\console.cpp" />
     <ClCompile Include="minerva\engine.cpp" />
     <ClCompile Include="minerva\modeling\custom_model.cpp" />

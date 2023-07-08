@@ -33,25 +33,10 @@ void StallUntilThreadsExecuted(Minerva::Engine* engine) {
 	}
 }
 
-void ConsoleCycle(Minerva::Engine* engine) {
-	Minerva::Debug::Console::Log("MINERVA CONSOLE");
-	for (;;) {
-		std::string text;
-		std::cout << "> ";
-		std::getline(std::cin, text);
-
-		const char* text_alloc = text.c_str();
-
-		Minerva::Console::Command(text_alloc, engine);
-	}
-}
-
 void Minerva::Engine::Cycle() {
 	for (auto system : on_first_cycle) {
 		system.second->OnFirstCycle(this);
 	}
-
-	std::thread console(ConsoleCycle, this);
 
 	for (;;) {
 		bool has_renderer = systems.count("renderer");
