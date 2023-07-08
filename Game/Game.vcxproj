@@ -97,8 +97,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\ronan\source\repos\Game\Game\libs\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\ronan\source\repos\Game\Game\libs\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)Game\libs\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Game\libs\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

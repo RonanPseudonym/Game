@@ -180,12 +180,18 @@ void Minerva::System::Renderer::OnTerminate(Minerva::Engine* engine) {
 	glfwTerminate();
 }
 
+void GLFWErrorCallback(int error, const char* msg) {
+	Minerva::Debug::Console::Error(("GLFW ERROR " + std::to_string(error) + " " + msg).c_str());
+}
+
 void Minerva::System::Renderer::InitGLFW() {
-	glfwInit();
+	if (glfwInit() == GLFW_FALSE) Debug::Console::FatalError("Failed to initialize GLFW");
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_AUTO_ICONIFY,   GLFW_TRUE);
+
+	glfwSetErrorCallback(GLFWErrorCallback);
 
 	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 
