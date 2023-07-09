@@ -26,6 +26,17 @@
 #include <STB/stb_image.h>
 
 namespace Minerva {
+	namespace Random {
+		int    Range(int min, int max);
+		double Range(double min, double max);
+
+		int    Range(int max);
+		double Range(double max);
+
+		int    SplitRange(int max);
+		double SplitRange(double max);
+	}
+
 	namespace Net {
 		uint64_t DumpFloat(long double f, unsigned bits, unsigned expbits);
 		long double LoadFloat(uint64_t i, unsigned bits, unsigned expbits);
@@ -343,6 +354,10 @@ namespace Minerva {
 
 	namespace Component {
 		struct Base {
+			virtual std::string Name() {
+				return "base";
+			}
+
 			virtual Base* Clone() {
 				return new Base();
 			};
@@ -389,6 +404,14 @@ namespace Minerva {
 				scale    = _scale;
 			}
 
+			std::string Name() {
+				return "transform";
+			}
+
+			static std::string TypeName() {
+				return "transform";
+			}
+
 			Base* Clone() {
 				return new Transform(
 					position,
@@ -409,6 +432,14 @@ namespace Minerva {
 				program = _program;
 			}
 
+			std::string Name() {
+				return "renderer";
+			}
+
+			static std::string TypeName() {
+				return "renderer";
+			}
+
 			Base* Clone() {
 				return new Renderer(
 					model, program
@@ -427,6 +458,14 @@ namespace Minerva {
 				front = _front;
 				up    = _up;
 			}
+			
+			std::string Name() {
+				return "camera";
+			}
+
+			static std::string TypeName() {
+				return "camera";
+			}
 
 			Base* Clone() {
 				return new Camera(
@@ -436,6 +475,14 @@ namespace Minerva {
 		};
 
 		struct Noclip : Base {
+			std::string Name() {
+				return "noclip";
+			}
+
+			static std::string TypeName() {
+				return "noclip";
+			}
+
 			Base* Clone() {
 				return new Noclip();
 			}
@@ -446,6 +493,14 @@ namespace Minerva {
 
 			Instance(Renderer* r) {
 				instance_renderer = r;
+			}
+
+			std::string Name() {
+				return "instance";
+			}
+
+			static std::string TypeName() {
+				return "instance";
 			}
 			
 			Base* Clone() {
@@ -476,6 +531,10 @@ namespace Minerva {
 				return { 0 };
 			};
 
+			virtual std::string Name() {
+				return "base";
+			}
+
 			virtual void OnInitialize(Engine* engine) {};
 			virtual void OnFirstCycle(Engine* engine) {};
 			virtual void OnCycle     (Engine* engine) {};
@@ -500,6 +559,14 @@ namespace Minerva {
 					false
 				};
 			};
+
+			std::string Name() {
+				return "renderer";
+			}
+
+			static std::string TypeName() {
+				return "renderer";
+			}
 
 			void OnInitialize(Engine* engine);
 			void OnUpdate    (Engine* engine);
@@ -553,6 +620,14 @@ namespace Minerva {
 				glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
 				glm::vec3 up    = glm::vec3(0.0f, 1.0f, 0.0f);
 
+				std::string Name() {
+					return "noclip";
+				}
+
+				static std::string TypeName() {
+					return "noclip";
+				}
+
 				float speed;
 				const float sensitivity = 0.1f;
 				bool first_mouse = true;
@@ -581,15 +656,15 @@ namespace Minerva {
 
 	class Prototype {
 	public:
-		std::unordered_map<std::string, Component::Base*> components;
+		std::vector<Component::Base*> components;
 
 		Prototype() {};
-		Prototype(std::unordered_map<std::string, Component::Base*> _components) {
+		Prototype(std::vector<Component::Base*> _components) {
 			components = _components;
 		}
 
-		void Add(std::string name, Component::Base* cmpt) {
-			components[name] = cmpt;
+		void Add(Component::Base* cmpt) {
+			components.push_back(cmpt);
 		}
 	};
 
@@ -608,29 +683,18 @@ namespace Minerva {
 		unsigned int operator()();
 		unsigned int operator()(std::string prototype);
 		void         Destroy        (unsigned int entity);
-		void         AddComponent   (unsigned int entity, std::string component_name, Component::Base* cmpt);
+		void         AddComponent   (unsigned int entity, Component::Base* cmpt);
 		void         RemoveComponent(unsigned int entity, std::string component_name);
 		//std::unordered_map<unsigned int, Component::Base*>
 		//	              operator[](std::string component_name);
 		//Component::Base*  GetComponent(unsigned int entity, std::string component_name);
 		//System::Base*     operator()(std::string system_name);
 
-		template <class T> T* Component(int entity, std::string component) {
-			Minerva::Component::Base* c = components[component][entity];
-			if (!c) Minerva::Debug::Console::Error((std::string("Unable to get ") + std::to_string(entity) + ":" + component).c_str());
-
-			return (T*)c;
-		}
-
 		std::unordered_map<unsigned int, Minerva::Component::Base*> Components(std::string component) {
 			return components[component];
 		}
 
-		template <class T> T* System(std::string system) {
-			return (T*)systems[system];
-		}
-
-		System::Base* AddSystem (std::string system_name, System::Base* system);
+		System::Base* AddSystem (System::Base* system);
 		void          RemoveSystem   (std::string system_name);
 		
 		Prototype* AddPrototype   (std::string name, Prototype p);
@@ -639,6 +703,9 @@ namespace Minerva {
 
 		std::unordered_map<std::string, bool> threads_to_complete;
 		bool                                  threads_should_terminate = false;
+
+		Component::Base* GetRawComponent(unsigned int id, std::string name);
+		System::Base* GetRawSystem(std::string name);
 
 	private:
 		int current_id;
@@ -659,4 +726,14 @@ namespace Minerva {
 	};
 
 	void CycleEngineThread(Engine* engine, System::Base* system, std::string system_name);
+
+	template <class T>
+	T* Get(Engine* engine, unsigned int id) {
+		return (T*)engine->GetRawComponent(id, T::TypeName());
+	}
+
+	template <class T>
+	T* Get(Engine* engine) {
+		return (T*)engine->GetRawSystem(T::TypeName());
+	}
 }

@@ -44,11 +44,11 @@ void Minerva::System::Renderer::OnUpdate(Minerva::Engine* engine) {
 		size_changed = false;
 	}
 
-	auto camera_pos = engine->template Component<Minerva::Component::Camera>(cameras[camera], "camera");
+	auto camera_pos = Get<Minerva::Component::Camera>(engine, cameras[camera]);
 	glm::mat4 camera = proj * glm::lookAt(camera_pos->pos, camera_pos->pos + camera_pos->front, camera_pos->up);
 
 	for (auto entity : engine->Components("renderer")) {
-		Minerva::Component::Transform* t = engine->template Component<Minerva::Component::Transform>(entity.first, "transform");
+		Minerva::Component::Transform* t = Get<Minerva::Component::Transform>(engine, entity.first);
 		Minerva::Component::Renderer* r = (Minerva::Component::Renderer*)entity.second;
 		glm::mat4 transform = glm::mat4(1.0f);
 
@@ -119,7 +119,7 @@ void Minerva::System::Renderer::OnUpdate(Minerva::Engine* engine) {
 void Minerva::System::Renderer::BuildInstanceBuffer(Minerva::Engine* engine) {
 	for (auto entity : engine->Components("instance")) {
 		instances[((Minerva::Component::Instance*)entity.second)->instance_renderer].push_back(
-			engine->template Component<Minerva::Component::Transform>(entity.first, "transform")
+			Get<Minerva::Component::Transform>(engine, entity.first)
 		);
 	}
 
@@ -229,7 +229,7 @@ void Minerva::System::Renderer::InitSTBI() {
 
 unsigned int Minerva::System::Renderer::InstantiateCamera(Minerva::Engine* engine) {
 	unsigned int id = engine->Instantiate();
-	engine->AddComponent(id, "camera",    new Minerva::Component::Camera());
+	engine->AddComponent(id, new Minerva::Component::Camera());
 
 	cameras.push_back(id);
 

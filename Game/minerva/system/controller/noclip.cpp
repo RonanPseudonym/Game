@@ -32,7 +32,7 @@ void Minerva::System::Controller::Noclip::OnMouse(Minerva::Engine* engine, doubl
 }
 
 void Minerva::System::Controller::Noclip::OnInput(Minerva::Engine* engine) {
-	GLFWwindow* window = engine->template System<Minerva::System::Renderer>("renderer")->window;
+	GLFWwindow* window = Get<Minerva::System::Renderer>(engine)->window;
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
 		speed = 10.0f * engine->delta_time;
@@ -50,7 +50,7 @@ void Minerva::System::Controller::Noclip::OnInput(Minerva::Engine* engine) {
 		pos += glm::normalize(glm::cross(front, up)) * speed;
 
 	for (auto entity : engine->Components("noclip")) {
-		Minerva::Component::Camera* c = engine->template Component<Minerva::Component::Camera>(entity.first, "camera");
+		Minerva::Component::Camera* c = Get<Component::Camera>(engine, entity.first);
 		c->pos   = pos;
 		c->up    = up;
 		c->front = front;

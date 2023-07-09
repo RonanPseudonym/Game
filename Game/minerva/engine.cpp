@@ -41,7 +41,7 @@ void Minerva::Engine::Cycle() {
 	for (;;) {
 		bool has_renderer = systems.count("renderer");
 		GLFWwindow* window;
-		if (has_renderer) window = System<Minerva::System::Renderer>("renderer")->window; // this can be optimized prolly
+		if (has_renderer) window = Get<Minerva::System::Renderer>(this)->window; // this can be optimized prolly
 		else {
 			window = NULL;
 		}
@@ -101,8 +101,8 @@ unsigned int Minerva::Engine::Instantiate() {
 unsigned int Minerva::Engine::Instantiate(std::string prototype) {
 	unsigned int id = Instantiate();
 
-	for (auto pair : GetPrototype(prototype)->components)
-		Minerva::Engine::AddComponent(id, pair.first, pair.second->Clone());
+	for (auto cmpt : GetPrototype(prototype)->components)
+		Minerva::Engine::AddComponent(id, cmpt->Clone());
 
 	return id;
 }
@@ -125,10 +125,9 @@ void Minerva::Engine::Destroy(unsigned int entity) {
 
 void Minerva::Engine::AddComponent(
 	unsigned int entity, 
-	std::string name, 
 	Minerva::Component::Base* component) 
 {
-	components[name][entity] = component;
+	components[component->Name()][entity] = component;
 }
 
 void Minerva::Engine::RemoveComponent(unsigned int entity, std::string name) {
@@ -136,7 +135,8 @@ void Minerva::Engine::RemoveComponent(unsigned int entity, std::string name) {
 	components[name].erase(entity);
 }
 
-Minerva::System::Base* Minerva::Engine::AddSystem(std::string system_name, System::Base* system) {
+Minerva::System::Base* Minerva::Engine::AddSystem(System::Base* system) {
+	std::string system_name = system->Name();
 	systems[system_name] = system;
 	Minerva::System::CallbackRequests cb = system->GetCallbackRequests();
 
@@ -188,6 +188,14 @@ void Minerva::Engine::RemovePrototype(std::string name) {
 
 Minerva::Prototype* Minerva::Engine::GetPrototype(std::string name) {
 	return &prototypes[name];
+}
+
+Minerva::Component::Base* Minerva::Engine::GetRawComponent(unsigned int id, std::string name) {
+	return components[name][id];
+}
+
+Minerva::System::Base* Minerva::Engine::GetRawSystem(std::string name) {
+	return systems[name];
 }
 
 /*template <class T>
