@@ -25,6 +25,9 @@
 
 #include <STB/stb_image.h>
 
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include <winsock2.h>
+
 namespace Minerva {
 	namespace Random {
 		int    Range(int min, int max);
@@ -517,7 +520,7 @@ namespace Minerva {
 		struct CallbackRequests {
 			bool on_initialize;
 			bool on_first_cycle;
-			bool on_cycle;
+			bool on_thread;
 			bool on_update;
 			bool on_precycle;
 			bool on_terminate;
@@ -537,12 +540,14 @@ namespace Minerva {
 
 			virtual void OnInitialize(Engine* engine) {};
 			virtual void OnFirstCycle(Engine* engine) {};
-			virtual void OnCycle     (Engine* engine) {};
+			virtual void OnThread    (Engine* engine, double delta_time) {};
 			virtual void OnUpdate    (Engine* engine) {};
 			virtual void OnPrecycle  (Engine* engine) {};
 			virtual void OnTerminate (Engine* engine) {};
 			virtual void OnInput     (Engine* engine) {};
 			virtual void OnMouse     (Engine* engine, double xpos, double ypos) {};
+
+			virtual unsigned int GetFPS() { return 0; }
 		};
 
 		class Renderer : public Base {
@@ -611,6 +616,81 @@ namespace Minerva {
 
 			int window_width;
 			int window_height;
+		};
+
+		class Server : public Base {
+		public:
+			unsigned int port;
+			SOCKET sock;
+
+			Server(unsigned int _port) {
+				port = _port;
+			}
+
+			std::string Name() {
+				return "server";
+			}
+
+			static std::string TypeName() {
+				return "server";
+			}
+
+			CallbackRequests GetCallbackRequests() {
+				return {
+					true,
+					false,
+					true,
+					true,
+					false,
+					true,
+					false,
+					false
+				};
+			}
+
+			void OnInitialize(Engine* engine);
+			void OnThread(Engine* engine, double delta_time);
+			void OnUpdate(Engine* engine);
+			void OnTerminate(Engine* engine);
+		};
+
+		class Client : public Base {
+		public:
+			unsigned int server_port;
+			const char* server_ip;
+			SOCKET sock;
+			SOCKADDR_IN server;
+
+			Client(unsigned int _port, const char* _ip) {
+				server_port = _port;
+				server_ip = _ip;
+			}
+
+			std::string Name() {
+				return "client";
+			}
+
+			static std::string TypeName() {
+				return "client";
+			}
+
+			CallbackRequests GetCallbackRequests() {
+				return {
+					true,
+					false,
+					true,
+					true,
+					false,
+					true,
+					false,
+					false
+				};
+			}
+
+			void OnInitialize(Engine* engine);
+			void OnThread(Engine* engine, double delta_time);
+			void OnUpdate(Engine* engine);
+			void OnTerminate(Engine* engine);
 		};
 
 		namespace Controller {
@@ -701,11 +781,11 @@ namespace Minerva {
 		void       RemovePrototype(std::string name);
 		Prototype* GetPrototype   (std::string name);
 
-		std::unordered_map<std::string, bool> threads_to_complete;
-		bool                                  threads_should_terminate = false;
-
 		Component::Base* GetRawComponent(unsigned int id, std::string name);
 		System::Base* GetRawSystem(std::string name);
+
+		std::unordered_map<std::string, std::thread*> threads;
+		bool threads_should_terminate = false;
 
 	private:
 		int current_id;
@@ -717,15 +797,12 @@ namespace Minerva {
 		std::unordered_map<std::string, System::Base*> on_initialize;
 		std::unordered_map<std::string, System::Base*> on_update;
 		std::unordered_map<std::string, System::Base*> on_precycle;
+		std::unordered_map<std::string, System::Base*> on_thread;
 		std::unordered_map<std::string, System::Base*> on_terminate;
 		std::unordered_map<std::string, System::Base*> on_input;
 		std::unordered_map<std::string, System::Base*> on_mouse;
 		std::unordered_map<std::string, System::Base*> on_first_cycle;
-
-		std::unordered_map<std::string, std::thread*> threads;
 	};
-
-	void CycleEngineThread(Engine* engine, System::Base* system, std::string system_name);
 
 	template <class T>
 	T* Get(Engine* engine, unsigned int id) {

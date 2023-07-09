@@ -46,11 +46,12 @@ std::vector<float> cube = {
 
 int main() {
 	Minerva::Engine engine;
-	auto renderer = (Minerva::System::Renderer*)engine.AddSystem(new Minerva::System::Renderer());
-	engine.AddSystem(new Minerva::System::Controller::Noclip());
+	/*auto renderer = (Minerva::System::Renderer*)engine.AddSystem(new Minerva::System::Renderer());
+	engine.AddSystem(new Minerva::System::Controller::Noclip());*/
+	engine.AddSystem(new Minerva::System::Server(12345));
 	engine.Initialize();
 
-	Minerva::Modeling::CustomModel model;
+	/*Minerva::Modeling::CustomModel model;
 	model.AddMeshFromVertexTextureArray(cube, { "d.crate.png" }, renderer);
 
 	renderer->RegisterModel("cube", &model);
@@ -88,6 +89,7 @@ int main() {
 
 	unsigned int cam = renderer->InstantiateCamera(&engine);
 	engine.AddComponent(cam, new Minerva::Component::Noclip());
+	*/
 
 	engine.Cycle();
 

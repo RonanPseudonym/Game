@@ -12,30 +12,36 @@ void Minerva::Engine::Initialize() {
 	}
 }
 
-void Minerva::CycleEngineThread(Minerva::Engine* engine, Minerva::System::Base* system, std::string system_name) {
+void ThreadedLoop(Minerva::System::Base* system, Minerva::Engine* engine) {
+	unsigned int fps = system->GetFPS();
+	double wait = ((double)fps / 60.0);
+
+	double delta_time = 0;
+	double start;
+
 	while (!engine->threads_should_terminate) {
-		if (engine->threads_to_complete[system_name]) {
-			system->OnCycle(engine);
-			engine->threads_to_complete[system_name] = false;
-		}
-	}
-}
+		start = glfwGetTime();
 
-void StallUntilThreadsExecuted(Minerva::Engine* engine) {
-	for (;;) {
-		restart:
+		system->OnThread(engine, delta_time);
 
-		for (auto thread : engine->threads_to_complete) {
-			if (thread.second) goto restart; // im sorryyyyyyy
+		if (fps) {
+			double active_wait = wait - (glfwGetTime() - start);
+			if (active_wait > 0) std::this_thread::sleep_for(std::chrono::milliseconds((int)(active_wait * 1000)));
 		}
 
-		break;
+		delta_time = glfwGetTime() - start;
 	}
 }
 
 void Minerva::Engine::Cycle() {
+	glfwInit();
+
 	for (auto system : on_first_cycle) {
 		system.second->OnFirstCycle(this);
+	}
+
+	for (auto system : on_thread) {
+		threads[system.second->Name()] = new std::thread(ThreadedLoop, system.second, this);
 	}
 
 	for (;;) {
@@ -65,13 +71,6 @@ void Minerva::Engine::Cycle() {
 				system.second->OnInput(this);
 			}
 		}
-
-		// main loop
-		for (auto system : threads_to_complete) {
-			threads_to_complete[system.first] = true;
-		}
-
-		StallUntilThreadsExecuted(this); // wait until yalls done
 
 		// update
 
@@ -147,11 +146,7 @@ Minerva::System::Base* Minerva::Engine::AddSystem(System::Base* system) {
 	if (cb.on_input)       on_input      [system_name] = system;
 	if (cb.on_mouse)       on_mouse      [system_name] = system;
 	if (cb.on_first_cycle) on_first_cycle[system_name] = system;
-
-	if (cb.on_cycle) {
-		threads[system_name] = new std::thread(CycleEngineThread, this, system, system_name);
-		threads_to_complete[system_name] = false;
-	}
+	if (cb.on_thread)      on_thread      [system_name] = system;
 
 	return system;
 }
@@ -167,12 +162,7 @@ void Minerva::Engine::RemoveSystem(std::string system_name) {
 	if (cb.on_input)       on_input      .erase(system_name);
 	if (cb.on_mouse)       on_mouse      .erase(system_name);
 	if (cb.on_first_cycle) on_first_cycle.erase(system_name);
-
-	if (cb.on_cycle) { // TODO: fix
-		delete& threads[system_name];
-		threads.erase(system_name);
-		threads_to_complete.erase(system_name);
-	}
+	if (cb.on_thread)      on_thread     .erase(system_name);
 
 	delete system;
 	systems.erase(system_name);

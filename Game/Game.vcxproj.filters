@@ -63,6 +63,12 @@
     <ClCompile Include="minerva\random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="minerva\system\server.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="minerva\system\client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="juno-engine\include.h">
