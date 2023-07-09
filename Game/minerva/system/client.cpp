@@ -34,4 +34,13 @@ void Minerva::System::Client::OnTerminate(Engine* engine) {
 }
 
 void Minerva::System::Client::OnThread(Engine* engine, double delta) {
+	char message[256];
+	gets_s(message, 256);
+
+	int flags = 0;
+	if (sendto(sock, message, strlen(message), flags, (SOCKADDR*)&server, sizeof(server)) == SOCKET_ERROR)
+	{
+		Debug::Console::Error(("Sendto failed: " + std::to_string(WSAGetLastError())).c_str());
+		return;
+	}
 }

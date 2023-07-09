@@ -49,6 +49,7 @@ int main() {
 	/*auto renderer = (Minerva::System::Renderer*)engine.AddSystem(new Minerva::System::Renderer());
 	engine.AddSystem(new Minerva::System::Controller::Noclip());*/
 	engine.AddSystem(new Minerva::System::Server(12345));
+	engine.AddSystem(new Minerva::System::Client(12345, "127.0.0.1"));
 	engine.Initialize();
 
 	/*Minerva::Modeling::CustomModel model;

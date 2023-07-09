@@ -40,4 +40,25 @@ void Minerva::System::Server::OnTerminate(Engine* engine) {
 }
 
 void Minerva::System::Server::OnThread(Engine* engine, double delta) {
+	char buffer[256];
+	int flags = 0;
+	SOCKADDR_IN from;
+	int from_size = sizeof(from);
+	int bytes_received = recvfrom(sock, buffer, 256, flags, (SOCKADDR*)&from, &from_size);
+
+	if (bytes_received == SOCKET_ERROR)
+	{
+		printf("recvfrom returned SOCKET_ERROR, WSAGetLastError() %d", WSAGetLastError());
+	}
+	else
+	{
+		buffer[bytes_received] = 0;
+		printf("%d.%d.%d.%d:%d - %s",
+			from.sin_addr.S_un.S_un_b.s_b1,
+			from.sin_addr.S_un.S_un_b.s_b2,
+			from.sin_addr.S_un.S_un_b.s_b3,
+			from.sin_addr.S_un.S_un_b.s_b4,
+			ntohs(from.sin_port),
+			buffer);
+	}
 }
