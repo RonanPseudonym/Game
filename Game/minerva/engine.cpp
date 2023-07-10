@@ -93,6 +93,10 @@ void Minerva::Engine::Terminate() {
 	exit(0);
 }
 
+Minerva::Engine::~Engine() {
+	Terminate();
+}
+
 unsigned int Minerva::Engine::Instantiate() {
 	return current_id++;
 }

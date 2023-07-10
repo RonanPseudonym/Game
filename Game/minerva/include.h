@@ -1,5 +1,6 @@
 /* Citations
 	learnopengl.com for OpenGL instruction
+	codersblock.org for sockets (c++ multiplayer fps series)
 */
 
 #pragma once
@@ -197,7 +198,10 @@ namespace Minerva {
 		};
 
 		enum PacketType {
-			TEST
+			CLIENT_HANDSHAKE_REQUEST,
+			SERVER_HANDSHAKE_REPLY, // bool accept/deny
+
+			CLIENT_DISCONNECT
 		};
 
 		class Packet {
@@ -230,6 +234,11 @@ namespace Minerva {
 				data = _packet;
 				from = _from;
 			}
+		};
+
+		struct IP {
+			uint32_t address;
+			uint16_t port;
 		};
 	};
 
@@ -635,12 +644,19 @@ namespace Minerva {
 			int window_height;
 		};
 
+		struct ServerPrefs {
+			unsigned int max_players = 0;
+		};
+
 		class Server : public Base {
-		public:
+		private:
 			unsigned int port;
 			SOCKET sock;
 			std::queue<Net::ReceivedPacket*> packets;
 			char buffer[256]; // TODO: possibly change?
+			std::vector<Net::IP> clients;
+		public:
+			ServerPrefs prefs;
 
 			Server(unsigned int _port) {
 				port = _port;
@@ -660,7 +676,7 @@ namespace Minerva {
 					false,
 					true,
 					true,
-					false,
+					true,
 					true,
 					false,
 					false
@@ -674,6 +690,7 @@ namespace Minerva {
 			void OnThread(Engine* engine, double delta_time);
 			void OnUpdate(Engine* engine);
 			void OnTerminate(Engine* engine);
+			void OnPrecycle(Engine* engine);
 		};
 
 		class Client : public Base {
@@ -780,6 +797,7 @@ namespace Minerva {
 		double delta_time = 0;
 
 		Engine();
+		~Engine();
 
 		void Initialize();
 		void Cycle();      // game loop

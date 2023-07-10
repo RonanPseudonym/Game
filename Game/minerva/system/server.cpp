@@ -31,7 +31,7 @@ void Minerva::System::Server::OnInitialize(Engine* engine) {
 	}
 }
 
-void Minerva::System::Server::OnUpdate(Engine* engine) {
+void Minerva::System::Server::OnPrecycle(Engine* engine) {
 	while (packets.size()) {
 		Net::ReceivedPacket* p = packets.front();
 		
@@ -39,6 +39,10 @@ void Minerva::System::Server::OnUpdate(Engine* engine) {
 
 		packets.pop();
 	}
+}
+
+void Minerva::System::Server::OnUpdate(Engine* engine) {
+	// TODO: send world state
 }
 
 void Minerva::System::Server::Send(char* data, unsigned int size, SOCKADDR* to) {

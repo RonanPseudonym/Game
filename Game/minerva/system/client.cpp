@@ -23,6 +23,10 @@ void Minerva::System::Client::OnInitialize(Engine* engine) {
 	server.sin_family = AF_INET;
 	server.sin_port = htons(server_port);
 	server.sin_addr.S_un.S_addr = inet_addr(server_ip);
+
+	Send(new Net::Packet(
+		Net::CLIENT_HANDSHAKE_REQUEST
+	));
 }
 
 void Minerva::System::Client::OnUpdate(Engine* engine) {
@@ -34,7 +38,9 @@ void Minerva::System::Client::OnUpdate(Engine* engine) {
 }
 
 void Minerva::System::Client::OnTerminate(Engine* engine) {
-
+	Send(new Net::Packet(
+		Net::CLIENT_DISCONNECT
+	));
 }
 
 void Minerva::System::Client::OnThread(Engine* engine, double delta) {
