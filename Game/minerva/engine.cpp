@@ -39,20 +39,19 @@ void ThreadedLoop(Minerva::System::Base* system, int fn, int fps, Minerva::Engin
 }
 
 void Minerva::Engine::Cycle() {
-	glfwInit();
-
 	for (auto system : systems) {
 		system.second->OnSetup(this);
 	}
 
-	for (;;) {
-		bool has_renderer = systems.count("renderer");
-		GLFWwindow* window;
-		if (has_renderer) window = Get<Minerva::System::Renderer>(this)->window; // this can be optimized prolly
-		else {
-			window = NULL;
-		}
+	bool has_renderer = systems.count("renderer");
+	GLFWwindow* window;
+	if (has_renderer) window = Get<Minerva::System::Renderer>(this)->window; // this can be optimized prolly
+	else {
+		window = NULL;
+		glfwInit();
+	}
 
+	for (;;) {
 		double before = glfwGetTime();
 		// pre-cycle
 

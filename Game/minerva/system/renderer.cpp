@@ -185,7 +185,7 @@ void GLFWErrorCallback(int error, const char* msg) {
 }
 
 void Minerva::System::Renderer::InitGLFW() {
-	//if (glfwInit() == GLFW_FALSE) Debug::Console::FatalError("Failed to initialize GLFW");
+	if (glfwInit() == GLFW_FALSE) Debug::Console::FatalError("Failed to initialize GLFW");
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
