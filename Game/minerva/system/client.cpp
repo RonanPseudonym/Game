@@ -26,7 +26,11 @@ void Minerva::System::Client::OnInitialize(Engine* engine) {
 }
 
 void Minerva::System::Client::OnUpdate(Engine* engine) {
-
+	while (packets.size()) {
+		Net::Packet* p = packets.front();
+		std::cout << p->ToString() << std::endl;
+		packets.pop();
+	}
 }
 
 void Minerva::System::Client::OnTerminate(Engine* engine) {
@@ -34,14 +38,17 @@ void Minerva::System::Client::OnTerminate(Engine* engine) {
 }
 
 void Minerva::System::Client::OnThread(Engine* engine, double delta) {
-	std::string text;
-	std::cout << "> ";
-	std::getline(std::cin, text);
+	SOCKADDR_IN from;
+	int from_size = sizeof(from);
+	int bytes_received = recvfrom(sock, buffer, 256, 0, (SOCKADDR*)&from, &from_size); // TODO: check if from is server
 
-	Net::Packet p = Net::Packet(Net::TEST);
-	p += new Net::String((char*)text.c_str());
+	if (bytes_received == SOCKET_ERROR)
+	{
+		Debug::Console::Error(("Recvfrom failed: " + std::to_string(WSAGetLastError())).c_str());
+		return;
+	}
 
-	Send(&p);
+	packets.push(new Net::Packet((unsigned char*)&buffer));
 }
 
 void Minerva::System::Client::Send(Net::Packet* packet) {

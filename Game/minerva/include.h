@@ -221,6 +221,16 @@ namespace Minerva {
 			void Load(unsigned char* in);
 			std::string ToString();
 		};
+
+		struct ReceivedPacket {
+			Packet      data;
+			SOCKADDR_IN from;
+
+			ReceivedPacket(Packet _packet, SOCKADDR_IN _from) {
+				data = _packet;
+				from = _from;
+			}
+		};
 	};
 
 	namespace Debug {
@@ -629,7 +639,7 @@ namespace Minerva {
 		public:
 			unsigned int port;
 			SOCKET sock;
-			std::queue<Net::Packet*> packets;
+			std::queue<Net::ReceivedPacket*> packets;
 			char buffer[256]; // TODO: possibly change?
 
 			Server(unsigned int _port) {
@@ -657,6 +667,9 @@ namespace Minerva {
 				};
 			}
 
+			void Send(char* data, unsigned int size, SOCKADDR* to);
+			void Send(Net::Packet* packet, SOCKADDR* to);
+
 			void OnInitialize(Engine* engine);
 			void OnThread(Engine* engine, double delta_time);
 			void OnUpdate(Engine* engine);
@@ -669,6 +682,8 @@ namespace Minerva {
 			const char* server_ip;
 			SOCKET sock;
 			SOCKADDR_IN server;
+			std::queue<Net::Packet*> packets;
+			char buffer[256]; // TODO: possibly change?
 
 			Client(unsigned int _port, const char* _ip) {
 				server_port = _port;

@@ -33,10 +33,24 @@ void Minerva::System::Server::OnInitialize(Engine* engine) {
 
 void Minerva::System::Server::OnUpdate(Engine* engine) {
 	while (packets.size()) {
-		Net::Packet* p = packets.front();
-		std::cout << p->ToString() << std::endl;
+		Net::ReceivedPacket* p = packets.front();
+		
+		std::cout << p->data.ToString() << std::endl;
+
 		packets.pop();
 	}
+}
+
+void Minerva::System::Server::Send(char* data, unsigned int size, SOCKADDR* to) {
+	if (sendto(sock, data, size, 0, to, sizeof(SOCKADDR_IN)) == SOCKET_ERROR)
+	{
+		Debug::Console::Error(("Sendto failed: " + std::to_string(WSAGetLastError())).c_str());
+		return;
+	}
+}
+
+void Minerva::System::Server::Send(Net::Packet* packet, SOCKADDR* to) {
+	Send((char*)packet->Dump(), packet->size, to);
 }
 
 void Minerva::System::Server::OnTerminate(Engine* engine) {
@@ -51,9 +65,14 @@ void Minerva::System::Server::OnThread(Engine* engine, double delta) {
 
 	if (bytes_received == SOCKET_ERROR)
 	{
-		printf("recvfrom returned SOCKET_ERROR, WSAGetLastError() %d", WSAGetLastError());
+		Debug::Console::Error(("Recvfrom failed: " + std::to_string(WSAGetLastError())).c_str());
 		return;
 	}
 
-	packets.push(new Net::Packet((unsigned char*) & buffer));
+	packets.push(
+		new Net::ReceivedPacket(
+			Net::Packet((unsigned char*)&buffer),
+			from
+		)
+	);
 }
