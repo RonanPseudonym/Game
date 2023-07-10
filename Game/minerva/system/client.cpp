@@ -34,13 +34,27 @@ void Minerva::System::Client::OnTerminate(Engine* engine) {
 }
 
 void Minerva::System::Client::OnThread(Engine* engine, double delta) {
-	char message[256];
-	gets_s(message, 256);
+	std::string text;
+	std::cout << "> ";
+	std::getline(std::cin, text);
 
+	Net::Packet p = Net::Packet(Net::TEST);
+	p += new Net::String((char*)text.c_str());
+
+	Send(&p);
+}
+
+void Minerva::System::Client::Send(Net::Packet* packet) {
+	Send((char*)packet->Dump(), packet->size);
+}
+
+void Minerva::System::Client::Send(char* data, unsigned int size) {
 	int flags = 0;
-	if (sendto(sock, message, strlen(message), flags, (SOCKADDR*)&server, sizeof(server)) == SOCKET_ERROR)
+	if (sendto(sock, data, size, flags, (SOCKADDR*)&server, sizeof(server)) == SOCKET_ERROR)
 	{
 		Debug::Console::Error(("Sendto failed: " + std::to_string(WSAGetLastError())).c_str());
 		return;
 	}
+
+	free(data);
 }

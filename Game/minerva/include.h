@@ -27,6 +27,7 @@
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <winsock2.h>
+#include <queue>
 
 namespace Minerva {
 	namespace Random {
@@ -204,12 +205,18 @@ namespace Minerva {
 			PacketType type;
 			std::vector<Any> data;
 		public:
+			unsigned int size;
+
 			Packet();
 			Packet(PacketType type);
 			Packet(PacketType type, std::vector<Any> data);
 
+			Packet(unsigned char* _data) {
+				Load(_data);
+			}
+
 			void operator+=(Any value);
-			unsigned int Size();
+			void Size();
 			unsigned char* Dump();
 			void Load(unsigned char* in);
 			std::string ToString();
@@ -622,6 +629,8 @@ namespace Minerva {
 		public:
 			unsigned int port;
 			SOCKET sock;
+			std::queue<Net::Packet*> packets;
+			char buffer[256]; // TODO: possibly change?
 
 			Server(unsigned int _port) {
 				port = _port;
@@ -686,6 +695,9 @@ namespace Minerva {
 					false
 				};
 			}
+
+			void Send(char* data, unsigned int size);
+			void Send(Net::Packet* packet);
 
 			void OnInitialize(Engine* engine);
 			void OnThread(Engine* engine, double delta_time);

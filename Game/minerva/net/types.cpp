@@ -560,23 +560,22 @@ Net::Value* Net::LoadValueType(unsigned char* data_stream, unsigned int* index) 
         data.push_back(value);
     }
 
-    unsigned int Net::Packet::Size() {
-        unsigned int size = 3; // header size
+    void Net::Packet::Size() {
+        size = 3; // header size
 
         for (Any i : data) {
             size += i.NetSize(); // netsize means +1 (char encoding)
         }
-
-        return size;
     }
 
     unsigned char* Net::Packet::Dump() {
-        unsigned char* out = (unsigned char*)malloc(Size());
+        Size();
+        unsigned char* out = (unsigned char*)malloc(size);
 
         out[0] = (unsigned char)type;
 
         unsigned int* index = new unsigned int(1);
-        IntU2((unsigned int)data.size()).DumpRaw(out, index);
+        IntU2((unsigned int)size).DumpRaw(out, index);
 
 
         // index now is 3
@@ -592,20 +591,20 @@ Net::Value* Net::LoadValueType(unsigned char* data_stream, unsigned int* index) 
         type = (PacketType)in[0];
 
         unsigned int* i = new unsigned int(1);
-        IntU2 count;
-        count.Load(in, i);
+        IntU2 _size;
+        _size.Load(in, i);
 
-        for (int j = 0; j < count.internal; j++) {
+        size = _size.internal;
+
+        while (*i < size) {
             Any val;
             val.Load(in, i);
             data.push_back(val);
         }
-
-        free(in);
     }
 
     std::string Net::Packet::ToString() {
-        std::string out = "packet " + std::to_string(type) + " [" + std::to_string(Size()) + " bytes] {\n";
+        std::string out = "packet " + std::to_string(type) + " [" + std::to_string(size) + " bytes] {\n";
         for (auto val : data) {
             out += "  " + val.ToString() + "\n";
         }

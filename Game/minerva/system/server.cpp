@@ -32,7 +32,11 @@ void Minerva::System::Server::OnInitialize(Engine* engine) {
 }
 
 void Minerva::System::Server::OnUpdate(Engine* engine) {
-
+	while (packets.size()) {
+		Net::Packet* p = packets.front();
+		std::cout << p->ToString() << std::endl;
+		packets.pop();
+	}
 }
 
 void Minerva::System::Server::OnTerminate(Engine* engine) {
@@ -40,7 +44,6 @@ void Minerva::System::Server::OnTerminate(Engine* engine) {
 }
 
 void Minerva::System::Server::OnThread(Engine* engine, double delta) {
-	char buffer[256];
 	int flags = 0;
 	SOCKADDR_IN from;
 	int from_size = sizeof(from);
@@ -49,16 +52,8 @@ void Minerva::System::Server::OnThread(Engine* engine, double delta) {
 	if (bytes_received == SOCKET_ERROR)
 	{
 		printf("recvfrom returned SOCKET_ERROR, WSAGetLastError() %d", WSAGetLastError());
+		return;
 	}
-	else
-	{
-		buffer[bytes_received] = 0;
-		printf("%d.%d.%d.%d:%d - %s",
-			from.sin_addr.S_un.S_un_b.s_b1,
-			from.sin_addr.S_un.S_un_b.s_b2,
-			from.sin_addr.S_un.S_un_b.s_b3,
-			from.sin_addr.S_un.S_un_b.s_b4,
-			ntohs(from.sin_port),
-			buffer);
-	}
+
+	packets.push(new Net::Packet((unsigned char*) & buffer));
 }
