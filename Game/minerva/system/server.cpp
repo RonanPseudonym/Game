@@ -31,7 +31,7 @@ void Minerva::System::Server::OnInitialize(Engine* engine) {
 	}
 }
 
-void Minerva::System::Server::OnPrecycle(Engine* engine) {
+void Minerva::System::Server::Cycle1(Engine* engine) {
 	while (packets.size()) {
 		Net::ReceivedPacket* p = packets.front();
 		
@@ -41,7 +41,7 @@ void Minerva::System::Server::OnPrecycle(Engine* engine) {
 	}
 }
 
-void Minerva::System::Server::OnUpdate(Engine* engine) {
+void Minerva::System::Server::Cycle2(Engine* engine) {
 	// TODO: send world state
 }
 
@@ -61,7 +61,7 @@ void Minerva::System::Server::OnTerminate(Engine* engine) {
 
 }
 
-void Minerva::System::Server::OnThread(Engine* engine, double delta) {
+void Minerva::System::Server::Process1(Engine* engine, double delta) {
 	int flags = 0;
 	SOCKADDR_IN from;
 	int from_size = sizeof(from);

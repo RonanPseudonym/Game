@@ -7,13 +7,12 @@ Minerva::Engine::Engine() {
 }
 
 void Minerva::Engine::Initialize() {
-	for (auto system : on_initialize) {
+	for (auto system : systems) {
 		system.second->OnInitialize(this);
 	}
 }
 
-void ThreadedLoop(Minerva::System::Base* system, Minerva::Engine* engine) {
-	unsigned int fps = system->GetFPS();
+void ThreadedLoop(Minerva::System::Base* system, int fn, int fps, Minerva::Engine* engine) {
 	double wait = ((double)fps / 60.0);
 
 	double delta_time = 0;
@@ -22,7 +21,13 @@ void ThreadedLoop(Minerva::System::Base* system, Minerva::Engine* engine) {
 	while (!engine->threads_should_terminate) {
 		start = glfwGetTime();
 
-		system->OnThread(engine, delta_time);
+		switch (fn) {
+			case 1: system->Process1(engine, delta_time); break;
+			case 2: system->Process2(engine, delta_time); break;
+			case 3: system->Process3(engine, delta_time); break;
+			case 4: system->Process4(engine, delta_time); break;
+		}
+		
 
 		if (fps) {
 			double active_wait = wait - (glfwGetTime() - start);
@@ -36,12 +41,8 @@ void ThreadedLoop(Minerva::System::Base* system, Minerva::Engine* engine) {
 void Minerva::Engine::Cycle() {
 	glfwInit();
 
-	for (auto system : on_first_cycle) {
-		system.second->OnFirstCycle(this);
-	}
-
-	for (auto system : on_thread) {
-		threads[system.second->Name()] = new std::thread(ThreadedLoop, system.second, this);
+	for (auto system : systems) {
+		system.second->OnSetup(this);
 	}
 
 	for (;;) {
@@ -55,27 +56,28 @@ void Minerva::Engine::Cycle() {
 		double before = glfwGetTime();
 		// pre-cycle
 
-		for (auto system : on_precycle) {
-			system.second->OnPrecycle(this);
-		}
-
 		if (has_renderer) {
 			double xpos, ypos;
 			glfwGetCursorPos(window, &xpos, &ypos);
 
-			for (auto system : on_mouse) {
+			for (auto system : systems) {
 				system.second->OnMouse(this, xpos, ypos);
 			}
 
-			for (auto system : on_input) {
+			for (auto system : systems) {
 				system.second->OnInput(this);
 			}
 		}
 
 		// update
 
-		for (auto system : on_update) {
-			system.second->OnUpdate(this);
+		for (auto system : execution_order) {
+			switch (system.second) {
+				case 1: system.first->Cycle1(this); break;
+				case 2: system.first->Cycle2(this); break;
+				case 3: system.first->Cycle3(this); break;
+				case 4: system.first->Cycle4(this); break;
+			}
 		}
 
 		delta_time = (glfwGetTime() - before);
@@ -85,7 +87,7 @@ void Minerva::Engine::Cycle() {
 void Minerva::Engine::Terminate() {
 	threads_should_terminate = true;
 
-	for (auto system : on_terminate) {
+	for (auto system : systems) {
 		system.second->OnTerminate(this);
 	}
 
@@ -138,38 +140,22 @@ void Minerva::Engine::RemoveComponent(unsigned int entity, std::string name) {
 	components[name].erase(entity);
 }
 
-Minerva::System::Base* Minerva::Engine::AddSystem(System::Base* system) {
-	std::string system_name = system->Name();
-	systems[system_name] = system;
-	Minerva::System::CallbackRequests cb = system->GetCallbackRequests();
-
-	if (cb.on_initialize)  on_initialize [system_name] = system;
-	if (cb.on_update)      on_update     [system_name] = system;
-	if (cb.on_precycle)    on_precycle   [system_name] = system;
-	if (cb.on_terminate)   on_terminate  [system_name] = system;
-	if (cb.on_input)       on_input      [system_name] = system;
-	if (cb.on_mouse)       on_mouse      [system_name] = system;
-	if (cb.on_first_cycle) on_first_cycle[system_name] = system;
-	if (cb.on_thread)      on_thread      [system_name] = system;
-
-	return system;
+void Minerva::Engine::Systems(std::vector<System::Base*> s) {
+	for (auto system : s) {
+		systems[system->Name()] = system;
+	}
 }
 
-void Minerva::Engine::RemoveSystem(std::string system_name) {
-	Minerva::System::Base* system = systems[system_name];
-	Minerva::System::CallbackRequests cb = system->GetCallbackRequests();
+void Minerva::Engine::ExecutionOrder(std::vector<std::pair<std::string, unsigned int>> order) {
+	for (auto i : order) {
+		execution_order.push_back(std::make_pair(GetRawSystem(i.first), i.second));
+	}
+}
 
-	if (cb.on_initialize)  on_initialize .erase(system_name);
-	if (cb.on_update)      on_update     .erase(system_name);
-	if (cb.on_precycle)    on_precycle   .erase(system_name);
-	if (cb.on_terminate)   on_terminate  .erase(system_name);
-	if (cb.on_input)       on_input      .erase(system_name);
-	if (cb.on_mouse)       on_mouse      .erase(system_name);
-	if (cb.on_first_cycle) on_first_cycle.erase(system_name);
-	if (cb.on_thread)      on_thread     .erase(system_name);
-
-	delete system;
-	systems.erase(system_name);
+void Minerva::Engine::Spawn(std::vector<std::pair<std::pair<std::string, unsigned int>, unsigned int>> t) {
+	for (auto i : t) {
+		new std::thread(ThreadedLoop, GetRawSystem(i.first.first), i.first.second, i.second, this);
+	}
 }
 
 Minerva::Prototype* Minerva::Engine::AddPrototype(std::string name, Minerva::Prototype p) {

@@ -3,8 +3,20 @@
 int main() {
 	Minerva::Engine engine;
 
-	engine.AddSystem(new Minerva::System::Server(12345));
+	engine.Systems({
+		new Minerva::System::Server(12345)
+	});
+
+	engine.ExecutionOrder({
+		{"server", 1},
+		{"server", 2},
+	});
+
 	engine.Initialize();
+
+	engine.Spawn({
+		{{"server", 1}, 0}
+	});
 
 	engine.Cycle();
 

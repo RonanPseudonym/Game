@@ -12,6 +12,7 @@
 #include <thread>
 #include <cstdlib>
 #include <ctype.h>
+#include <functional>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -543,54 +544,31 @@ namespace Minerva {
 	class Engine; // forward declaration
 
 	namespace System {
-		struct CallbackRequests {
-			bool on_initialize;
-			bool on_first_cycle;
-			bool on_thread;
-			bool on_update;
-			bool on_precycle;
-			bool on_terminate;
-			bool on_input;
-			bool on_mouse;
-		};
-
 		class Base {
 		public:
-			virtual CallbackRequests GetCallbackRequests() {
-				return { 0 };
-			};
-
 			virtual std::string Name() {
 				return "base";
 			}
 
 			virtual void OnInitialize(Engine* engine) {};
-			virtual void OnFirstCycle(Engine* engine) {};
-			virtual void OnThread    (Engine* engine, double delta_time) {};
-			virtual void OnUpdate    (Engine* engine) {};
-			virtual void OnPrecycle  (Engine* engine) {};
+			virtual void OnSetup     (Engine* engine) {}
 			virtual void OnTerminate (Engine* engine) {};
 			virtual void OnInput     (Engine* engine) {};
 			virtual void OnMouse     (Engine* engine, double xpos, double ypos) {};
 
-			virtual unsigned int GetFPS() { return 0; }
+			virtual void Cycle1(Engine* engine) {};
+			virtual void Cycle2(Engine* engine) {};
+			virtual void Cycle3(Engine* engine) {};
+			virtual void Cycle4(Engine* engine) {};
+
+			virtual void Process1(Engine* engine, double delta) {};
+			virtual void Process2(Engine* engine, double delta) {};
+			virtual void Process3(Engine* engine, double delta) {};
+			virtual void Process4(Engine* engine, double delta) {};
 		};
 
 		class Renderer : public Base {
 		public:
-			CallbackRequests GetCallbackRequests() {
-				return {
-					true,
-					true,
-					false,
-					true,
-					true,
-					true,
-					false,
-					false
-				};
-			};
-
 			std::string Name() {
 				return "renderer";
 			}
@@ -600,13 +578,13 @@ namespace Minerva {
 			}
 
 			void OnInitialize(Engine* engine);
-			void OnUpdate    (Engine* engine);
-			void OnPrecycle  (Engine* engine);
+			void OnSetup(Engine* engine);
 			void OnTerminate (Engine* engine);
-			void OnFirstCycle(Engine* engine);
+
+			void Cycle1(Engine* engine);
+			void Cycle2(Engine* engine);
 
 			RendererPrefs prefs;
-
 			glm::mat4 proj;
 
 			unsigned int InstantiateCamera(Engine* engine);
@@ -617,7 +595,7 @@ namespace Minerva {
 			Shading::Shader*     GetShader (std::string name);
 			Shading::Program*    GetProgram(std::string name);
 			Modeling::Texture*   GetTexture(std::string name);
-			Modeling::ModelBase* GetModel  (std::string name);
+			Modeling::ModelBase* GetModel(std::string name);
 
 			void RegisterModel(std::string name, Modeling::ModelBase* model);
 			void RemoveModel  (std::string name);
@@ -670,27 +648,15 @@ namespace Minerva {
 				return "server";
 			}
 
-			CallbackRequests GetCallbackRequests() {
-				return {
-					true,
-					false,
-					true,
-					true,
-					true,
-					true,
-					false,
-					false
-				};
-			}
-
 			void Send(char* data, unsigned int size, SOCKADDR* to);
 			void Send(Net::Packet* packet, SOCKADDR* to);
 
 			void OnInitialize(Engine* engine);
-			void OnThread(Engine* engine, double delta_time);
-			void OnUpdate(Engine* engine);
 			void OnTerminate(Engine* engine);
-			void OnPrecycle(Engine* engine);
+
+			void Cycle1(Engine* engine);
+			void Cycle2(Engine* engine);
+			void Process1(Engine* engine, double delta);
 		};
 
 		class Client : public Base {
@@ -715,26 +681,14 @@ namespace Minerva {
 				return "client";
 			}
 
-			CallbackRequests GetCallbackRequests() {
-				return {
-					true,
-					false,
-					true,
-					true,
-					false,
-					true,
-					false,
-					false
-				};
-			}
-
 			void Send(char* data, unsigned int size);
 			void Send(Net::Packet* packet);
 
 			void OnInitialize(Engine* engine);
-			void OnThread(Engine* engine, double delta_time);
-			void OnUpdate(Engine* engine);
 			void OnTerminate(Engine* engine);
+
+			void Cycle1(Engine* engine);
+			void Process1(Engine* engine, double delta);
 		};
 
 		namespace Controller {
@@ -758,19 +712,6 @@ namespace Minerva {
 				double lastx, lasty;
 				float pitch = 90.0f;
 				float yaw = 90.0f;
-
-				CallbackRequests GetCallbackRequests() {
-					return {
-						false,
-						false,
-						false,
-						false,
-						false,
-						false,
-						true,
-						true
-					};
-				}
 
 				void OnInput(Engine * engine);
 				void OnMouse(Engine * engine, double xpos, double ypos);
@@ -819,8 +760,9 @@ namespace Minerva {
 			return components[component];
 		}
 
-		System::Base* AddSystem (System::Base* system);
-		void          RemoveSystem   (std::string system_name);
+		void Systems(std::vector<System::Base*> systems);
+		void ExecutionOrder(std::vector<std::pair<std::string, unsigned int>> order);
+		void Spawn(std::vector<std::pair<std::pair<std::string, unsigned int>, unsigned int>> threads);
 		
 		Prototype* AddPrototype   (std::string name, Prototype p);
 		void       RemovePrototype(std::string name);
@@ -829,24 +771,16 @@ namespace Minerva {
 		Component::Base* GetRawComponent(unsigned int id, std::string name);
 		System::Base* GetRawSystem(std::string name);
 
-		std::unordered_map<std::string, std::thread*> threads;
 		bool threads_should_terminate = false;
+
+		std::unordered_map<std::string, System::Base*> systems;
 
 	private:
 		int current_id;
 
 		std::unordered_map<std::string, std::unordered_map<unsigned int, Component::Base*>> components;
-		std::unordered_map<std::string, System::Base*> systems;
 		std::unordered_map<std::string, Minerva::Prototype> prototypes;
-
-		std::unordered_map<std::string, System::Base*> on_initialize;
-		std::unordered_map<std::string, System::Base*> on_update;
-		std::unordered_map<std::string, System::Base*> on_precycle;
-		std::unordered_map<std::string, System::Base*> on_thread;
-		std::unordered_map<std::string, System::Base*> on_terminate;
-		std::unordered_map<std::string, System::Base*> on_input;
-		std::unordered_map<std::string, System::Base*> on_mouse;
-		std::unordered_map<std::string, System::Base*> on_first_cycle;
+		std::vector<std::pair<System::Base*, unsigned int>> execution_order;
 	};
 
 	template <class T>

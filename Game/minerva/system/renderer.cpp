@@ -25,7 +25,7 @@ void Minerva::System::Renderer::OnInitialize(Minerva::Engine* engine) {
 }
 
 
-void Minerva::System::Renderer::OnUpdate(Minerva::Engine* engine) {
+void Minerva::System::Renderer::Cycle2(Minerva::Engine* engine) {
 	if (glfwGetWindowAttrib(window, GLFW_ICONIFIED)) {
 		if (glfwWindowShouldClose(window)) engine->Terminate();
 		glfwPollEvents();
@@ -167,11 +167,11 @@ void Minerva::System::Renderer::BuildInstanceBuffer(Minerva::Engine* engine) {
 	}
 }
 
-void Minerva::System::Renderer::OnFirstCycle(Minerva::Engine* engine) {
+void Minerva::System::Renderer::OnSetup(Minerva::Engine* engine) {
 	BuildInstanceBuffer(engine);
 }
 
-void Minerva::System::Renderer::OnPrecycle(Minerva::Engine* engine) {
+void Minerva::System::Renderer::Cycle1(Minerva::Engine* engine) {
 	glClearColor(0.2f, 0.2f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
