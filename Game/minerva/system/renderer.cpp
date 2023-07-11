@@ -221,6 +221,9 @@ void Minerva::System::Renderer::InitOpenGL() {
 	glViewport(0, 0, window_width, window_height);
 
 	glEnable(GL_DEPTH_TEST);
+
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CW);
 }
 
 void Minerva::System::Renderer::InitSTBI() {

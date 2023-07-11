@@ -13,7 +13,7 @@ void Minerva::Engine::Initialize() {
 }
 
 void ThreadedLoop(Minerva::System::Base* system, int fn, int fps, Minerva::Engine* engine) {
-	double wait = ((double)fps / 60.0);
+	double wait = 1.0 / (double)fps;
 
 	double delta_time = 0;
 	double start;
@@ -28,7 +28,6 @@ void ThreadedLoop(Minerva::System::Base* system, int fn, int fps, Minerva::Engin
 			case 4: system->Process4(engine, delta_time); break;
 		}
 		
-
 		if (fps) {
 			double active_wait = wait - (glfwGetTime() - start);
 			if (active_wait > 0) std::this_thread::sleep_for(std::chrono::milliseconds((int)(active_wait * 1000)));
@@ -38,10 +37,15 @@ void ThreadedLoop(Minerva::System::Base* system, int fn, int fps, Minerva::Engin
 	}
 }
 
-void Minerva::Engine::Cycle() {
+void Minerva::Engine::Cycle(unsigned int fps) {
 	for (auto system : systems) {
 		system.second->OnSetup(this);
 	}
+
+	double wait = 1.0 / (double)fps;
+
+	double delta_time = 0;
+	double before;
 
 	bool has_renderer = systems.count("renderer");
 	GLFWwindow* window;
@@ -52,7 +56,7 @@ void Minerva::Engine::Cycle() {
 	}
 
 	for (;;) {
-		double before = glfwGetTime();
+		before = glfwGetTime();
 		// pre-cycle
 
 		if (has_renderer) {
@@ -66,6 +70,11 @@ void Minerva::Engine::Cycle() {
 			for (auto system : systems) {
 				system.second->OnInput(this);
 			}
+
+			if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) { // TODO: remove
+				Terminate();
+				return;
+			}
 		}
 
 		// update
@@ -77,6 +86,11 @@ void Minerva::Engine::Cycle() {
 				case 3: system.first->Cycle3(this); break;
 				case 4: system.first->Cycle4(this); break;
 			}
+		}
+
+		if (fps) {
+			double active_wait = wait - (glfwGetTime() - before);
+			if (active_wait > 0) std::this_thread::sleep_for(std::chrono::milliseconds((int)(active_wait * 1000)));
 		}
 
 		delta_time = (glfwGetTime() - before);

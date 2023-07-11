@@ -35,14 +35,47 @@ void Minerva::System::Server::Cycle1(Engine* engine) {
 	while (packets.size()) {
 		Net::ReceivedPacket* p = packets.front();
 		
-		std::cout << p->data.ToString() << std::endl;
+		switch (p->data.type) {
+			case Net::CLIENT_HANDSHAKE_REQUEST: {
+				Net::Packet reply(Net::SERVER_HANDSHAKE_REPLY);
+				if (prefs.max_players > 0 && clients.size() >= prefs.max_players) {
+					reply += new Net::IntU2(0);
+				}
+				else {
+					reply += new Net::IntU2(1);
+					clients.push_back(p->from);
+					Debug::Console::Log((std::string(inet_ntoa(p->from.sin_addr)) + " connected").c_str());
+				}
+
+				Send(&reply, (SOCKADDR*)&(p->from));
+				break;
+			}
+			case Net::CLIENT_DISCONNECT: {
+				Debug::Console::Log((std::string(inet_ntoa(p->from.sin_addr)) + " disconnected").c_str());
+				
+				for (int i = 0; i < clients.size(); i ++) {
+					SOCKADDR_IN addr = clients[i];
+					if ((addr.sin_addr.S_un.S_addr == p->from.sin_addr.S_un.S_addr) && (addr.sin_port == p->from.sin_port)) {
+						clients.erase(clients.begin() + i);
+						break;
+					}
+				}
+
+				break;
+			}
+		}
 
 		packets.pop();
 	}
 }
 
 void Minerva::System::Server::Cycle2(Engine* engine) {
-	// TODO: send world state
+	Net::Packet state(Net::SERVER_SNAPSHOT);
+	char* data = (char*)state.Dump();
+
+	for (SOCKADDR_IN client : clients) { // TODO: broadcasting?
+		Send(data, state.size, (SOCKADDR*)&client);
+	}
 }
 
 void Minerva::System::Server::Send(char* data, unsigned int size, SOCKADDR* to) {
@@ -62,10 +95,9 @@ void Minerva::System::Server::OnTerminate(Engine* engine) {
 }
 
 void Minerva::System::Server::Process1(Engine* engine, double delta) {
-	int flags = 0;
 	SOCKADDR_IN from;
 	int from_size = sizeof(from);
-	int bytes_received = recvfrom(sock, buffer, 256, flags, (SOCKADDR*)&from, &from_size);
+	int bytes_received = recvfrom(sock, buffer, 256, 0, (SOCKADDR*)&from, &from_size);
 
 	if (bytes_received == SOCKET_ERROR)
 	{

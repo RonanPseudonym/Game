@@ -41,6 +41,8 @@ void Minerva::System::Client::OnTerminate(Engine* engine) {
 	Send(new Net::Packet(
 		Net::CLIENT_DISCONNECT
 	));
+
+	closesocket(sock);
 }
 
 void Minerva::System::Client::Process1(Engine* engine, double delta) {

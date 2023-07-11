@@ -182,7 +182,7 @@ namespace Minerva {
 			std::string ToString();
 		};
 
-		class ComponentValue : public Value {
+		/*class ComponentValue : public Value {
 		public:
 			IntU4 id;
 			String key;
@@ -196,20 +196,20 @@ namespace Minerva {
 			void DumpRaw(unsigned char* data_stream, unsigned int* index);
 			unsigned int Size();
 			std::string ToString();
-		};
+		};*/
 
 		enum PacketType {
 			CLIENT_HANDSHAKE_REQUEST,
 			SERVER_HANDSHAKE_REPLY, // bool accept/deny
 
-			CLIENT_DISCONNECT
+			CLIENT_DISCONNECT,
+
+			SERVER_SNAPSHOT
 		};
 
-		class Packet {
-		private:
+		struct Packet {
 			PacketType type;
 			std::vector<Any> data;
-		public:
 			unsigned int size;
 
 			Packet();
@@ -235,11 +235,6 @@ namespace Minerva {
 				data = _packet;
 				from = _from;
 			}
-		};
-
-		struct IP {
-			uint32_t address;
-			uint16_t port;
 		};
 	};
 
@@ -632,7 +627,7 @@ namespace Minerva {
 			SOCKET sock;
 			std::queue<Net::ReceivedPacket*> packets;
 			char buffer[256]; // TODO: possibly change?
-			std::vector<Net::IP> clients;
+			std::vector<SOCKADDR_IN> clients;
 		public:
 			ServerPrefs prefs;
 
@@ -741,7 +736,7 @@ namespace Minerva {
 		~Engine();
 
 		void Initialize();
-		void Cycle();      // game loop
+		void Cycle(unsigned int fps);      // game loop
 		void Terminate();
 
 		unsigned int Instantiate();
@@ -784,12 +779,12 @@ namespace Minerva {
 	};
 
 	template <class T>
-	T* Get(Engine* engine, unsigned int id) {
+	inline T* Get(Engine* engine, unsigned int id) {
 		return (T*)engine->GetRawComponent(id, T::TypeName());
 	}
 
 	template <class T>
-	T* Get(Engine* engine) {
+	inline T* Get(Engine* engine) {
 		return (T*)engine->GetRawSystem(T::TypeName());
 	}
 }

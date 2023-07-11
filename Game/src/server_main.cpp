@@ -18,7 +18,7 @@ int main() {
 		{{"server", 1}, 0}
 	});
 
-	engine.Cycle();
+	engine.Cycle(20);
 
 	return 0;
 }
